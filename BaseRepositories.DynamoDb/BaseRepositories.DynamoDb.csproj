@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Authors>Danny Etsebban</Authors>
+    <Company>None</Company>
+    <Product>General</Product>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.3.101.18" />
+    <PackageReference Include="BaseRepositories.Models" Version="1.0.1" />
+  </ItemGroup>
+
+</Project>
