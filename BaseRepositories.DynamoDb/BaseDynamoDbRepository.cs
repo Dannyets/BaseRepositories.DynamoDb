@@ -3,6 +3,7 @@ using Amazon.DynamoDBv2.DataModel;
 using BaseRepositories.Interfaces;
 using BaseRepositories.Models;
 using BaseRepositories.Models.Enums;
+using BaseRepositories.Models.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace BaseRepositories.DynamoDb
 {
-    public class BaseDynamoDbRepository<T> : IBaseRepository<T> where T : BaseDynamoDbModel
+    public class BaseDynamoDbRepository<T> : IBaseRepository<T, string> where T : IBaseDbModel<string>
     {
         protected readonly string _tableName;
 
@@ -21,21 +22,11 @@ namespace BaseRepositories.DynamoDb
 
         public async Task<T> Add(T dbModel)
         {
-            dbModel.Id = new Guid().ToString();
-            dbModel.CreatedAt = DateTime.UtcNow;
-            dbModel.TransactionStatus = DbTransactionStatus.Pending;
+            FillNewModelProperties(dbModel);
 
-            await Save(dbModel);
+            await Update(dbModel);
 
             return dbModel;
-        }
-
-        public async Task Save(T dbModel)
-        {
-            await UseContext(async (client, context) =>
-            {
-                await context.SaveAsync(dbModel);
-            });
         }
 
         public async Task<bool> CheckHealth()
@@ -43,12 +34,63 @@ namespace BaseRepositories.DynamoDb
             return await UseContext(IsTableActive);
         }
 
-        public async Task ConfirmTransaction(ConfirmTransactionModel model)
+        public async Task ConfirmTransaction(ConfirmTransactionModel<string> model)
         {
             await UseContext(async (client, context) => 
             {
                 await CommitOrDeleteTransaction(client, context, model);
             });
+        }
+
+        public Task<IEnumerable<T>> GetAll()
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<T> GetById(string id)
+        {
+            return await UseContext(async (client, context) =>
+            {
+                var record = await context.LoadAsync<T>(id);
+
+                return record;
+            });
+        }
+
+        public async Task Delete(string id)
+        {
+            await UseContext(async (client, context) =>
+            {
+                await context.DeleteAsync<T>(id);
+            });
+        }
+
+        public async Task Update(T model)
+        {
+            await UseContext(async (client, context) =>
+            {
+                await context.SaveAsync(model);
+            });
+        }
+
+        public async Task AddMany(IEnumerable<T> models)
+        {
+            await UseContext(async (client, context) =>
+            {
+                var saveToDbTasks = models.Select(m =>
+                {
+                    FillNewModelProperties(m);
+
+                    return context.SaveAsync(m);
+                });
+
+                await Task.WhenAll(saveToDbTasks);
+            });
+        }
+
+        public Task Save()
+        {
+            throw new NotImplementedException();
         }
 
         private async Task<ReturnType> UseContext<ReturnType>(Func<AmazonDynamoDBClient, DynamoDBContext, Task<ReturnType>> asyncFunc)
@@ -73,7 +115,7 @@ namespace BaseRepositories.DynamoDb
             }
         }
 
-        private async Task CommitOrDeleteTransaction(AmazonDynamoDBClient client, DynamoDBContext context, ConfirmTransactionModel model)
+        private async Task CommitOrDeleteTransaction(AmazonDynamoDBClient client, DynamoDBContext context, ConfirmTransactionModel<string> model)
         {
             var record = await context.LoadAsync<T>(model.Id);
 
@@ -101,5 +143,11 @@ namespace BaseRepositories.DynamoDb
             return tableData.Table.TableStatus == "active";
         }
 
+        private void FillNewModelProperties(T dbModel)
+        {
+            dbModel.Id = new Guid().ToString();
+            dbModel.CreatedAt = DateTime.UtcNow;
+            dbModel.TransactionStatus = DbTransactionStatus.Pending;
+        }
     }
 }
