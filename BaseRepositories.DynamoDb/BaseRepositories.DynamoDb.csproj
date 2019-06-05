@@ -9,12 +9,12 @@
     <RepositoryUrl>https://github.com/Dannyets/BaseRepositories.DynamoDb</RepositoryUrl>
     <Description>Basic implementation of dynamo db repository functions</Description>
     <PackageId>BaseRepositories.DynamoDb</PackageId>
-    <Version>1.1.0</Version>
+    <Version>1.1.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.3.101.18" />
-    <PackageReference Include="BaseRepositories.Models" Version="1.2.1" />
+    <PackageReference Include="BaseRepositories.Models" Version="1.2.2" />
   </ItemGroup>
 
 </Project>

@@ -1,5 +1,7 @@
-﻿using Amazon.DynamoDBv2;
+﻿using Amazon;
+using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
+using Amazon.Runtime;
 using BaseRepositories.Interfaces;
 using BaseRepositories.Models;
 using BaseRepositories.Models.Enums;
@@ -14,10 +16,16 @@ namespace BaseRepositories.DynamoDb
     public class BaseDynamoDbRepository<T> : IBaseRepository<T, string> where T : IBaseDbModel<string>
     {
         protected readonly string _tableName;
+        private readonly AWSCredentials _credentials;
+        private readonly RegionEndpoint _regionEndpoint;
 
-        public BaseDynamoDbRepository(string tableName)
+        public BaseDynamoDbRepository(string tableName, 
+                                      AWSCredentials credentials, 
+                                      RegionEndpoint regionEndpoint)
         {
             _tableName = tableName;
+            _credentials = credentials;
+            _regionEndpoint = regionEndpoint;
         }
 
         public async Task<T> Add(T dbModel)
@@ -88,14 +96,9 @@ namespace BaseRepositories.DynamoDb
             });
         }
 
-        public Task Save()
-        {
-            throw new NotImplementedException();
-        }
-
         private async Task<ReturnType> UseContext<ReturnType>(Func<AmazonDynamoDBClient, DynamoDBContext, Task<ReturnType>> asyncFunc)
         {
-            using (var client = new AmazonDynamoDBClient())
+            using (var client = new AmazonDynamoDBClient(_credentials, _regionEndpoint))
             {
                 using (var context = new DynamoDBContext(client))
                 {
@@ -106,7 +109,7 @@ namespace BaseRepositories.DynamoDb
 
         private async Task UseContext(Func<AmazonDynamoDBClient, DynamoDBContext, Task> asyncFunc)
         {
-            using (var client = new AmazonDynamoDBClient())
+            using (var client = new AmazonDynamoDBClient(_credentials, _regionEndpoint))
             {
                 using (var context = new DynamoDBContext(client))
                 {
@@ -140,7 +143,9 @@ namespace BaseRepositories.DynamoDb
         {
             var tableData = await client.DescribeTableAsync(_tableName);
 
-            return tableData.Table.TableStatus == "active";
+            var tableStatus = tableData.Table.TableStatus.Value.ToLower();
+
+            return tableStatus == "active";
         }
 
         private void FillNewModelProperties(T dbModel)
