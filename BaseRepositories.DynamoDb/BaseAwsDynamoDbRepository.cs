@@ -13,15 +13,15 @@ using System.Threading.Tasks;
 
 namespace BaseRepositories.DynamoDb
 {
-    public class BaseDynamoDbRepository<T> : IBaseRepository<T, string> where T : IBaseDbModel<string>
+    public class BaseAwsDynamoDbRepository<T> : IBaseRepository<T, string> where T : IBaseDbModel<string>
     {
         protected readonly string _tableName;
         private readonly AWSCredentials _credentials;
         private readonly RegionEndpoint _regionEndpoint;
 
-        public BaseDynamoDbRepository(string tableName, 
-                                      AWSCredentials credentials, 
-                                      RegionEndpoint regionEndpoint)
+        public BaseAwsDynamoDbRepository(string tableName, 
+                                         AWSCredentials credentials, 
+                                         RegionEndpoint regionEndpoint)
         {
             _tableName = tableName;
             _credentials = credentials;
@@ -150,7 +150,7 @@ namespace BaseRepositories.DynamoDb
 
         private void FillNewModelProperties(T dbModel)
         {
-            dbModel.Id = new Guid().ToString();
+            dbModel.Id = Guid.NewGuid().ToString();
             dbModel.CreatedAt = DateTime.UtcNow;
             dbModel.TransactionStatus = DbTransactionStatus.Pending;
         }

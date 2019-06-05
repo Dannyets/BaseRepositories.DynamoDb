@@ -9,7 +9,7 @@
     <RepositoryUrl>https://github.com/Dannyets/BaseRepositories.DynamoDb</RepositoryUrl>
     <Description>Basic implementation of dynamo db repository functions</Description>
     <PackageId>BaseRepositories.DynamoDb</PackageId>
-    <Version>1.1.1</Version>
+    <Version>1.1.2</Version>
   </PropertyGroup>
 
   <ItemGroup>

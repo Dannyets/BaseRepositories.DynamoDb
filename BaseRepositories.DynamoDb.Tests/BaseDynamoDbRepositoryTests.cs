@@ -15,12 +15,12 @@ namespace BaseRepositories.DynamoDb.Tests
         [TestInitialize]
         public void Init()
         {
-            var accessKey = "Put your access key";
-            var secretKey = "Put your secret key";
+            var accessKey = "AKIAJ75UNZD3HLEJVCHQ";
+            var secretKey = "2EiELG2dH8uFFxxUcd40QY4ir1PHk+CVJZJDbZu0";
             var credentials = new BasicAWSCredentials(accessKey, secretKey);
             var region = RegionEndpoint.USEast2;
 
-            _repository = new BaseDynamoDbRepository<ExerciseDbModel>("Exercise", credentials, region);
+            _repository = new BaseAwsDynamoDbRepository<ExerciseDbModel>("Exercise", credentials, region);
         }
 
         [TestMethod]
