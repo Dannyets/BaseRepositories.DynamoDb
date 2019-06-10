@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -9,12 +9,11 @@
     <RepositoryUrl>https://github.com/Dannyets/BaseRepositories.DynamoDb</RepositoryUrl>
     <Description>Basic implementation of dynamo db repository functions</Description>
     <PackageId>BaseRepositories.DynamoDb</PackageId>
-    <Version>1.1.2</Version>
+    <Version>2.0.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.3.101.18" />
-    <PackageReference Include="BaseRepositories.Models" Version="1.2.2" />
   </ItemGroup>
 
 </Project>

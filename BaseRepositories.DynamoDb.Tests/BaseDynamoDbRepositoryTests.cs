@@ -1,8 +1,10 @@
 using Amazon;
 using Amazon.Runtime;
-using BaseRepositories.DynamoDb.Tests.DbTestEntities;
-using BaseRepositories.Interfaces;
+using BaseRepositories.DynamoDb.Interfaces;
+using BaseRepositories.DynamoDb.Repositories;
+using BaseRepositories.DynamoDb.Tests.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.Threading.Tasks;
 
 namespace BaseRepositories.DynamoDb.Tests
@@ -10,17 +12,18 @@ namespace BaseRepositories.DynamoDb.Tests
     [TestClass]
     public class BaseDynamoDbRepositoryTests
     {
-        IBaseRepository<ExerciseDbModel, string> _repository;
+        IDynamoDbRepository<ExerciseDbModel> _repository;
 
         [TestInitialize]
         public void Init()
         {
-            var accessKey = "AKIAJ75UNZD3HLEJVCHQ";
-            var secretKey = "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";
-            var credentials = new BasicAWSCredentials(accessKey, secretKey);
-            var region = RegionEndpoint.USEast2;
+            var accessKey = Environment.GetEnvironmentVariable("AWS_ACCESS_KEY");
+            var secretKey = Environment.GetEnvironmentVariable("AWS_SECRET_KEY");
 
-            _repository = new BaseAwsDynamoDbRepository<ExerciseDbModel>("Exercise", credentials, region);
+            var region = RegionEndpoint.USEast2;
+            var credentials = new BasicAWSCredentials(accessKey, secretKey);
+
+            _repository = new BaseDynamoDbRepository<ExerciseDbModel>("Exercise", credentials, region);
         }
 
         [TestMethod]

@@ -2,26 +2,24 @@
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.Runtime;
-using BaseRepositories.Interfaces;
-using BaseRepositories.Models;
-using BaseRepositories.Models.Enums;
-using BaseRepositories.Models.Interfaces;
+using BaseRepositories.DynamoDb.Interfaces;
+using BaseRepositories.DynamoDb.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace BaseRepositories.DynamoDb
+namespace BaseRepositories.DynamoDb.Repositories
 {
-    public class BaseAwsDynamoDbRepository<T> : IBaseRepository<T, string> where T : IBaseDbModel<string>
+    public class BaseDynamoDbRepository<T> : IDynamoDbRepository<T> where T : BaseDynamoDbModel
     {
         protected readonly string _tableName;
         private readonly AWSCredentials _credentials;
         private readonly RegionEndpoint _regionEndpoint;
 
-        public BaseAwsDynamoDbRepository(string tableName, 
-                                         AWSCredentials credentials, 
-                                         RegionEndpoint regionEndpoint)
+        public BaseDynamoDbRepository(string tableName, 
+                                      AWSCredentials credentials, 
+                                      RegionEndpoint regionEndpoint)
         {
             _tableName = tableName;
             _credentials = credentials;
@@ -42,17 +40,17 @@ namespace BaseRepositories.DynamoDb
             return await UseContext(IsTableActive);
         }
 
-        public async Task ConfirmTransaction(ConfirmTransactionModel<string> model)
+        public async Task<IEnumerable<T>> GetAll()
         {
-            await UseContext(async (client, context) => 
+            return await UseContext(async (client, context) =>
             {
-                await CommitOrDeleteTransaction(client, context, model);
-            });
-        }
+                var conditions = new List<ScanCondition>();
 
-        public Task<IEnumerable<T>> GetAll()
-        {
-            throw new NotImplementedException();
+                var result = await context.ScanAsync<T>(conditions)
+                                          .GetRemainingAsync();
+
+                return result;
+            });
         }
 
         public async Task<T> GetById(string id)
@@ -62,6 +60,17 @@ namespace BaseRepositories.DynamoDb
                 var record = await context.LoadAsync<T>(id);
 
                 return record;
+            });
+        }
+
+        public async Task<IEnumerable<T>> GetFilter(IEnumerable<ScanCondition> conditions)
+        {
+            return await UseContext(async (client, context) =>
+            {
+                var result = await context.ScanAsync<T>(conditions)
+                                          .GetRemainingAsync();
+
+                return result;
             });
         }
 
@@ -96,7 +105,7 @@ namespace BaseRepositories.DynamoDb
             });
         }
 
-        private async Task<ReturnType> UseContext<ReturnType>(Func<AmazonDynamoDBClient, DynamoDBContext, Task<ReturnType>> asyncFunc)
+        internal async Task<ReturnType> UseContext<ReturnType>(Func<AmazonDynamoDBClient, DynamoDBContext, Task<ReturnType>> asyncFunc)
         {
             using (var client = new AmazonDynamoDBClient(_credentials, _regionEndpoint))
             {
@@ -107,7 +116,7 @@ namespace BaseRepositories.DynamoDb
             }
         }
 
-        private async Task UseContext(Func<AmazonDynamoDBClient, DynamoDBContext, Task> asyncFunc)
+        internal async Task UseContext(Func<AmazonDynamoDBClient, DynamoDBContext, Task> asyncFunc)
         {
             using (var client = new AmazonDynamoDBClient(_credentials, _regionEndpoint))
             {
@@ -115,27 +124,6 @@ namespace BaseRepositories.DynamoDb
                 {
                     await asyncFunc(client, context);
                 }
-            }
-        }
-
-        private async Task CommitOrDeleteTransaction(AmazonDynamoDBClient client, DynamoDBContext context, ConfirmTransactionModel<string> model)
-        {
-            var record = await context.LoadAsync<T>(model.Id);
-
-            if (record == null)
-            {
-                throw new KeyNotFoundException($"record with id ${model.Id} not found.");
-            }
-
-            if (model.TransactionStatus == DbTransactionStatus.Active)
-            {
-                record.TransactionStatus = DbTransactionStatus.Active;
-
-                await context.SaveAsync(record);
-            }
-            else
-            {
-                await context.DeleteAsync(record);
             }
         }
 
@@ -152,7 +140,7 @@ namespace BaseRepositories.DynamoDb
         {
             dbModel.Id = Guid.NewGuid().ToString();
             dbModel.CreatedAt = DateTime.UtcNow;
-            dbModel.TransactionStatus = DbTransactionStatus.Pending;
+            dbModel.LastUpdatedAt = DateTime.UtcNow;
         }
     }
 }
